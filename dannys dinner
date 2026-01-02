@@ -6,18 +6,89 @@
  ##  questions and solutions
 
   **1. What is the total amount each customer spent at the restaurant?**
-   select
+  
+  select
   customer_id, sum(price) as total_amount_spent from sales as s
   inner join menu as m using(product_id) 
   group by customer_id;
 
 ## Answer
-customer_id	total_amount_spent
-A	76
-B	74
-C	36
+customer_id	       total_amount_spent
+    A	                 76
+    B	                 74
+    C	                 36
+
+
+explanation:
 
 >here they are asking tot amt of each customer so, 
 >make a sum of total prize as total_amount_spent is optional
   join should perform because price is in menu table 
   >product id is common in both the tables so inner join.
+
+****
+
+**2.How many days has each customer visited the restaurant?**
+
+ select customer_id,count(distinct order_date)
+as no_of_visit_days from sales 
+group by customer_id;
+
+##Answer
+customer_id      no_of_visit_days	
+   A	                 4
+   B	                 6
+   C	                 2
+
+explanation:
+
+>how many days in the sence mean count is used here
+> for counting distinct days
+
+****
+
+**3.What was the first item from the menu purchased by each customer
+
+ sales.customer_id, 
+    sales.order_date, 
+    menu.product_name,
+    DENSE_RANK() OVER (
+      PARTITION BY sales.customer_id 
+      ORDER BY sales.order_date) AS rank
+  FROM dannys_diner.sales
+  INNER JOIN dannys_diner.menu
+    ON sales.product_id = menu.product_id
+)
+SELECT 
+  customer_id, 
+  product_name
+FROM ordered_sales
+WHERE rank = 1
+GROUP BY customer_id, product_name;
+
+
+##Answer
+
+customer_id      	product_name
+    A	              curry
+    A	              sushi
+    B              	curry
+    C	              ramen
+
+explaination:
+> Ranks items by order_date for each customer It assigns the same rank (1) to all items purchased on the earliest date
+
+
+##4.What is the most purchased item on the menu and how many times was it purchased by all customers?
+
+select product_name,count(*) as cnt from sales as s
+  inner join menu as m using(product_id) group by product_name
+  order by cnt desc limit 1;
+
+##Answer
+
+product_name     cnt	
+ramen           	8
+
+
+explaination:
