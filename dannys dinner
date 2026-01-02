@@ -1,0 +1,23 @@
+#solutions for dannys diner case study 
+
+  ##entity relationship diagram
+
+  ***
+ ##  questions and solutions
+
+  **1. What is the total amount each customer spent at the restaurant?**
+   select
+  customer_id, sum(price) as total_amount_spent from sales as s
+  inner join menu as m using(product_id) 
+  group by customer_id;
+
+## Answer
+customer_id	total_amount_spent
+A	76
+B	74
+C	36
+
+>here they are asking tot amt of each customer so, 
+>make a sum of total prize as total_amount_spent is optional
+  join should perform because price is in menu table 
+  >product id is common in both the tables so inner join.
