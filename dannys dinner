@@ -3,7 +3,6 @@
   ##entity relationship diagram
 
 
-
   ***
  ##  questions and solutions
 
@@ -117,4 +116,118 @@ customer_id   product_name   cnt  rn
     C            ramen	      3	  1
 
 explanation :
+>for counting each customer we are using count
+>window function for finding popular item for each person
+
+
+###6.Which item was purchased first by the customer after they became a member
+
+ with CTE1 as (
+   
+   select S.*,m.price,m.product_name,mb.join_date from sales as s inner join menu as m using(product_id)
+   inner join members as mb on s.customer_id=mb.customer_id and order_date > join_date ),CTE2 as (                   
+   
+   select *,rank() over(partition by customer_id order by order_date asc) as rn from CTE1)
+   select customer_id,product_name from CTE2 where rn =1;
+
+##Answer
+
+customer_id   	product_name
+    A	             ramen
+    B	             sushi
+
+explanation:
+>after becoming a member use order date
+>cte is used to avoid from becoming complex query
+>all three tables are joines using inner join
+
+
+##7.Which item was purchased just before the customer became a member?
+
+ select customer_id,product_name,order_date from 
+   (select customer_id,product_name,order_date,
+   dense_rank() over(partition by customer_id order by order_date desc) as rn from sales as s
+   join menu using (product_id)
+   join members using (customer_id)
+   where order_date<join_date) as result
+   where rn=1;
+
+##Answer
+
+customer_id 	product_name	order_date
+    A	          sushi	       01-01-2021
+    A	          curry	       01-01-2021
+    B	          sushi	       04-01-2021
+
+explaination:
+>joining all 3 tables by inner join
+>order date should be less than joining date
+
+###8.What is the total items and amount spent for each member before they became a member?
+
+ with CTE1 as (
+   select s.customer_id,count(*) as total_items,sum(price) as total_amount_spent from sales as s 
+   inner join menu as m using(product_id)
+   inner join members as mb on s.customer_id=mb.customer_id and s.order_date<mb.join_date
+   group by s.customer_id order by customer_id)
+   select * from CTE1
+union all
+   select s.customer_id,count(*) as total_items,sum(price) as total_amount_spent from sales as s 
+   inner join menu as m using(product_id)
+   left join members as mb on s.customer_id=mb.customer_id and s.order_date<mb.join_date
+   where s.customer_id="c"
+   group by s.customer_id order by customer_id;
+
+##Answer
+
+customer_id	total_item	total_amount_spent
+     A	        2	             25
+     B	        3	             40
+     C	        3	             36
+
+
+explaination:
+>union all for joining two tables
 >
+
+
+
+###9.If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+
+ with CTE1 as (
+   select customer_id,sum( case when product_name='sushi' then price*10*2 else price *10 end )as total_points
+   from sales as s inner join menu as m using(product_id) group by customer_id)
+   
+   select *,case when total_points <500 then 'low' when total_points between 500 and 900 then 'avg' else 'high' end as status
+   from CTE1;
+
+##Answer
+
+customer_id	total_points	status
+    A	           860	      avg
+    B	           940	      high
+    C	           360	      low
+
+explaination:
+
+
+
+
+##1o.In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January
+
+
+select customer_id,sum(case when s.order_date between join_date and
+   date_add(join_date,interval 6 day) then price *20 when product_name='sushi' then price*20
+   else price * 10 end) as total_points
+   from sales as s inner join menu as m using(product_id) inner join members as mb using(customer_id)
+   where order_date<="2021-01-31"
+   group by customer_id;
+
+##Answer
+
+customer_id	   total_points
+     B	            820
+     A	            1370
+
+
+explaination:
